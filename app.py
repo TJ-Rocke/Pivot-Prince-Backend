@@ -4,7 +4,8 @@ import pandas as pd
 import io
 
 app = Flask(__name__)
-CORS(app)
+# Update CORS configuration to explicitly allow requests from production domain
+CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "https://pivot-prince.vercel.app"]}})
 
 
 @app.route("/pnov-bridge", methods=["POST"])
