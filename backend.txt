@@ -1,0 +1,49 @@
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import pandas as pd
+import io
+
+app = Flask(__name__)
+CORS(app)
+
+@app.route('/pnov-bridge', methods=['POST'])
+def pnov_bridge():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file uploaded'}), 400
+
+    file = request.files['file']
+    df = pd.read_csv(file)
+    df.columns = df.columns.str.strip()
+
+    output_lines = []
+
+    # 1. Total PNOV by DSP
+    total_by_dsp = df.groupby('DSP Name')['Tracking ID'].count().reset_index(name='Total')
+    total_by_dsp = total_by_dsp.sort_values(by='Total', ascending=False)
+    for _, row in total_by_dsp.iterrows():
+        output_lines.append(f"{row['DSP Name']}\t{row['Total']}")
+    output_lines.append("")
+    output_lines.append(f"Grand Total\t{total_by_dsp['Total'].sum()}")
+    output_lines.append("")
+
+    # 2. DAs with Over 1 MM Still Missing
+    over_1_mm = df.groupby(['DA Name', 'DSP Name'])['Tracking ID'].count().reset_index(name='Total')
+    over_1_mm = over_1_mm[over_1_mm['Total'] > 1].sort_values(by='Total', ascending=False)
+    output_lines.append("DAs with Over 1 MM still missing:")
+    for _, row in over_1_mm.iterrows():
+        output_lines.append(f"{row['DA Name']} / {row['DSP Name']} / [Multiple MMs]")
+        output_lines.append(str(row['Total']))
+    output_lines.append("")
+
+    # 3. High Value MM Still Missing
+    if 'Cost' in df.columns and 'Route' in df.columns:
+        high_value = df[df['Cost'] >= 50][['Route', 'DSP Name', 'Tracking ID', 'Cost']]
+        output_lines.append("High Value MM still missing DAs")
+        for _, row in high_value.iterrows():
+            output_lines.append(f"{row['Route']}/ {row['DSP Name']} / {row['Tracking ID']}\t1\t{row['Cost']:.2f}")
+
+    result_text = "\n".join(output_lines)
+    return jsonify({"report": result_text})
+
+if __name__ == '__main__':
+    app.run(debug=True, port=5000)
