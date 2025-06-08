@@ -4,9 +4,17 @@ import pandas as pd
 import io
 
 app = Flask(__name__)
-# Update CORS configuration to explicitly allow requests from production domain
-CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "https://pivot-prince.vercel.app"]}})
+# Update CORS configuration to be more permissive
+CORS(app, origins=["http://localhost:3000", "https://pivot-prince.vercel.app"], methods=["GET", "POST", "OPTIONS"], allow_headers=["Content-Type"], supports_credentials=True)
 
+# Add an options route to handle preflight requests
+@app.route("/pnov-bridge", methods=["OPTIONS"])
+def options():
+    response = jsonify({'status': 'success'})
+    response.headers.add('Access-Control-Allow-Origin', 'https://pivot-prince.vercel.app')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+    response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
+    return response
 
 @app.route("/pnov-bridge", methods=["POST"])
 def pnov_bridge():
@@ -61,7 +69,14 @@ def pnov_bridge():
             )
 
     result_text = "\n".join(output_lines)
-    return jsonify({"report": result_text})
+    response = jsonify({"report": result_text})
+    
+    # Add explicit CORS headers to the response
+    response.headers.add('Access-Control-Allow-Origin', 'https://pivot-prince.vercel.app')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+    response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
+    
+    return response
 
 
 if __name__ == "__main__":
