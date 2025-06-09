@@ -4,6 +4,8 @@ This Flask backend processes CSV files for the PNOV Bridge application.
 
 ## Setup
 
+### Local Development
+
 1. Install dependencies:
 
 ```
@@ -17,6 +19,30 @@ python app.py
 ```
 
 The server will start on http://localhost:5000
+
+### Docker Container
+
+1. Build the Docker container:
+
+```
+docker build -t pnov-bridge-backend .
+```
+
+2. Run the Docker container:
+
+```
+docker run -p 5000:8080 pivot-prince-backend
+```
+
+The server will start on http://localhost:8080
+
+### Deployment
+
+This application is configured for deployment on Fly.io. To deploy:
+
+```
+fly deploy
+```
 
 ## API Endpoints
 
