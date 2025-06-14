@@ -51,6 +51,8 @@ def pnov_bridge():
         .count()
         .reset_index(name="Total")
     )
+    # Filter out FLEX/SNOW Platform
+    over_1_mm = over_1_mm[(over_1_mm["DSP Name"] != "FLEX") & (over_1_mm["DSP Name"] != "SNOW Platform")]
     over_1_mm = over_1_mm[over_1_mm["Total"] > 1].sort_values(
         by="Total", ascending=False
     )
@@ -63,13 +65,13 @@ def pnov_bridge():
     # 3. High Value MM Still Missing
     if "Cost" in df.columns and "Route" in df.columns:
         # Filter to exclude FLEX drivers from high value items
-        high_value = df[(df["Cost"] >= 50) & (df["DSP Name"] != "FLEX")][["Route", "DSP Name", "Tracking ID", "Cost"]]
+        high_value = df[(df["Cost"] >= 50) & (df["DSP Name"] != "FLEX")][["Route", "DSP Name", "DA Name", "Tracking ID", "Cost"]]
         # Sort by Cost in descending order
         high_value = high_value.sort_values(by="Cost", ascending=False)
         output_lines.append("High Value MM still missing DAs")
         for _, row in high_value.iterrows():
             output_lines.append(
-                f"{row['Route']}/ {row['DSP Name']} / {row['Tracking ID']}\t1\t{row['Cost']:.2f}"
+                f"{row['Route']}/ {row['DA Name']} / {row['DSP Name']} / {row['Tracking ID']}\t{row['Cost']:.2f}"
             )
 
     result_text = "\n".join(output_lines)
